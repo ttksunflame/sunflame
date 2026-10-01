@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sunflame - Kitchen Appliances</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',Tahoma,sans-serif;color:#222;background:#fff}
+svg{display:block}
+.icon{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.icon-fill{fill:currentColor;stroke:none}
+
+/* ---------- HEADER ---------- */
+header{position:sticky;top:0;z-index:500;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.12)}
+.header-top{display:flex;align-items:center;gap:20px;padding:10px 30px}
+.hamburger{background:none;border:none;cursor:pointer;color:#222;padding:6px;display:flex}
+.hamburger .icon{width:26px;height:26px;stroke-width:2.2}
+.hamburger:hover{color:#d32f2f}
+.logo{display:flex;align-items:center;gap:8px;font-size:26px;font-weight:800;color:#d32f2f;letter-spacing:.5px;white-space:nowrap}
+.logo svg{width:30px;height:30px}
+.search-container{flex:1;max-width:520px;position:relative}
+.search-bar{position:relative;display:flex;align-items:center}
+.search-bar input{width:100%;padding:10px 14px 10px 40px;border:1px solid #ddd;border-radius:4px;font-size:14px}
+.search-bar input:focus{outline:none;border-color:#d32f2f}
+.search-bar .search-icon{position:absolute;left:12px;color:#888;width:18px;height:18px}
+.search-suggestions{display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #ddd;border-top:none;max-height:300px;overflow-y:auto;z-index:900;box-shadow:0 6px 14px rgba(0,0,0,.12)}
+.search-suggestions.active{display:block}
+.suggestion-item{padding:11px 14px;border-bottom:1px solid #f2f2f2;cursor:pointer;font-size:14px;display:flex;align-items:center;gap:10px}
+.suggestion-item:hover{background:#fafafa;color:#d32f2f}
+.header-right{display:flex;gap:26px;margin-left:auto}
+.header-right button{background:none;border:none;cursor:pointer;color:#333;font-size:11.5px;font-weight:600;display:flex;flex-direction:column;align-items:center;gap:4px;position:relative}
+.header-right button:hover{color:#d32f2f}
+.header-right .icon{width:22px;height:22px}
+.cart-count{position:absolute;top:-6px;right:2px;background:#d32f2f;color:#fff;border-radius:50%;width:18px;height:18px;font-size:10px;display:flex;align-items:center;justify-content:center;font-weight:700}
+
+/* ---------- NAV ---------- */
+.nav-main{background:#d32f2f}
+.nav-categories{display:flex;justify-content:center;list-style:none;flex-wrap:wrap}
+.nav-item{position:relative}
+.nav-item>button{padding:14px 15px;border:none;background:transparent;color:#fff;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap}
+.nav-item>button .icon{width:11px;height:11px;stroke-width:3}
+.nav-item:hover>button{background:#a81c1c}
+.dropdown-menu{display:none;position:absolute;top:100%;left:0;background:#fff;min-width:260px;box-shadow:0 10px 24px rgba(0,0,0,.22);border-top:3px solid #a81c1c;padding:6px 0}
+.nav-item:hover .dropdown-menu{display:block}
+.dropdown-menu a{display:block;padding:9px 18px;color:#333;text-decoration:none;font-size:13px;border-left:3px solid transparent}
+.dropdown-menu a:hover{background:#fdf2f2;color:#d32f2f;border-left-color:#d32f2f;padding-left:23px}
+.dd-head{padding:9px 18px 4px;font-size:10.5px;font-weight:800;color:#d32f2f;letter-spacing:.8px;text-transform:uppercase;border-bottom:1px solid #eee;margin-bottom:4px}
+
+/* ---------- SIDE DRAWER ---------- */
+.drawer-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1400}
+.drawer-overlay.active{display:block}
+.drawer{position:fixed;top:0;left:-340px;width:330px;height:100%;background:#fff;z-index:1500;transition:left .3s ease;display:flex;flex-direction:column;box-shadow:4px 0 20px rgba(0,0,0,.25)}
+.drawer.active{left:0}
+.drawer-head{display:flex;justify-content:space-between;align-items:center;padding:16px 18px;border-bottom:1px solid #eee;background:#fafafa}
+.drawer-head strong{color:#d32f2f;font-size:18px}
+.drawer-close{background:none;border:1.5px solid #333;border-radius:4px;cursor:pointer;padding:4px;display:flex;color:#333}
+.drawer-body{flex:1;overflow-y:auto}
+.drawer-row{border-bottom:1px solid #eee}
+.drawer-row>button{width:100%;background:none;border:none;padding:15px 18px;font-size:15px;font-weight:600;text-align:left;cursor:pointer;display:flex;justify-content:space-between;align-items:center;color:#222}
+.drawer-row>button:hover{background:#fafafa;color:#d32f2f}
+.drawer-row>button .icon{width:16px;height:16px;transition:transform .25s}
+.drawer-row.open>button .icon{transform:rotate(90deg)}
+.drawer-sub{display:none;background:#fafafa;padding:4px 0 10px}
+.drawer-row.open .drawer-sub{display:block}
+.drawer-sub a{display:block;padding:9px 34px;font-size:13.5px;color:#555;text-decoration:none}
+.drawer-sub a:hover{color:#d32f2f}
+.drawer-foot{background:#d32f2f;color:#fff;padding:14px 18px;font-size:13px}
+.drawer-foot div{display:flex;justify-content:space-between;margin-bottom:6px;font-weight:600}
+.drawer-foot div:last-child{margin:0}
+
+/* ---------- HERO ---------- */
+.hero{background:linear-gradient(135deg,#b71c1c,#e53935);color:#fff;padding:70px 30px;text-align:center}
+.hero h1{font-size:44px;font-weight:800;margin-bottom:12px}
+.hero p{font-size:17px;margin-bottom:26px;opacity:.95}
+.hero-btn{background:#fff;color:#d32f2f;border:none;padding:14px 36px;border-radius:4px;font-size:15px;font-weight:800;cursor:pointer}
+.hero-btn:hover{transform:scale(1.05)}
+
+.container{max-width:1500px;margin:0 auto;padding:0 30px}
+.section{padding:44px 0}
+.section-title{font-size:26px;font-weight:700;color:#d32f2f;text-align:center;margin-bottom:28px}
+
+/* ---------- CATEGORY STRIP ---------- */
+.cat-strip{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;background:#f6f0e8;padding:20px;border-radius:6px}
+.cat-tile{cursor:pointer;text-align:center}
+.cat-tile .cat-img{background:#e9dfd2;border-radius:6px;padding:12px;display:flex;align-items:center;justify-content:center;height:120px}
+.cat-tile svg{width:100%;height:100%}
+.cat-tile span{display:block;margin-top:8px;font-size:13.5px;font-weight:600}
+.cat-tile:hover span{color:#d32f2f}
+
+/* ---------- CAROUSEL ---------- */
+.carousel-container{position:relative}
+.carousel-wrapper{display:flex;gap:14px;overflow-x:auto;scroll-behavior:smooth;padding:6px 44px}
+.carousel-wrapper::-webkit-scrollbar{height:5px}
+.carousel-wrapper::-webkit-scrollbar-thumb{background:#d32f2f;border-radius:4px}
+.carousel-item{flex:0 0 210px}
+.video-card{position:relative;border-radius:12px;overflow:hidden;aspect-ratio:9/16;cursor:pointer;background:#111}
+.video-card:hover{transform:scale(1.03)}
+.video-card .vbg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(160deg,#2b2b2b,#111)}
+.video-card .vbg svg{width:70%;height:70%}
+.play-button{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:56px;height:56px;background:rgba(255,255,255,.92);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#d32f2f}
+.play-button svg{width:22px;height:22px;margin-left:3px}
+.video-info{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.92) 40%);color:#fff;padding:26px 12px 12px}
+.video-title{font-size:11.5px;font-weight:700;line-height:1.35}
+.video-views{font-size:10.5px;color:#bbb;margin-top:4px}
+.video-price{font-size:11px;color:#fff;margin-top:3px;font-weight:600}
+.carousel-nav{position:absolute;top:50%;transform:translateY(-50%);background:#fff;border:1px solid #eee;width:38px;height:38px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#d32f2f;box-shadow:0 3px 10px rgba(0,0,0,.18);z-index:5}
+.carousel-nav.prev{left:0}
+.carousel-nav.next{right:0}
+
+/* ---------- TABS + PRODUCTS ---------- */
+.tabs{display:flex;gap:12px;margin-bottom:26px}
+.tab-btn{padding:11px 22px;border:1px solid #e2e2e2;background:#f5f5f5;border-radius:4px;font-size:14.5px;font-weight:700;color:#333;cursor:pointer}
+.tab-btn.active{background:#d32f2f;color:#fff;border-color:#d32f2f}
+.tab-content{display:none}
+.tab-content.active{display:block}
+.products-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:20px}
+.product-card{border:1px solid #ececec;border-radius:8px;overflow:hidden;position:relative;background:#fff;transition:.25s}
+.product-card:hover{box-shadow:0 8px 24px rgba(0,0,0,.12);transform:translateY(-4px)}
+.bestseller-badge{position:absolute;top:10px;left:10px;background:#111;color:#fff;padding:5px 11px;border-radius:4px;font-size:10.5px;font-weight:700;z-index:3}
+.product-image{height:225px;background:#fff;display:flex;align-items:center;justify-content:center;padding:14px}
+.product-image svg{width:100%;height:100%}
+.product-info{padding:14px}
+.product-name{font-size:13.5px;font-weight:600;min-height:38px;line-height:1.4;margin-bottom:8px}
+.product-price{font-size:19px;font-weight:800;margin-bottom:4px}
+.product-mrp{display:flex;gap:8px;font-size:12px;align-items:center;margin-bottom:12px}
+.mrp-label{color:#999}
+.original-price{text-decoration:line-through;color:#999}
+.discount{color:#20a95c;font-weight:700}
+.add-to-cart-btn{width:100%;padding:10px;background:#d32f2f;color:#fff;border:none;border-radius:4px;font-size:13.5px;font-weight:700;cursor:pointer}
+.add-to-cart-btn:hover{background:#a81c1c}
+
+/* ---------- MODALS ---------- */
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:2000;align-items:center;justify-content:center;padding:20px}
+.modal.active{display:flex}
+.modal-content{background:#fff;width:100%;max-width:620px;border-radius:8px;max-height:84vh;display:flex;flex-direction:column}
+.modal-header{display:flex;justify-content:space-between;align-items:center;padding:18px 20px;border-bottom:1px solid #eee}
+.modal-header h2{font-size:20px}
+.close-modal{background:none;border:none;cursor:pointer;color:#444;display:flex}
+.close-modal .icon{width:24px;height:24px}
+.modal-body{padding:20px;overflow-y:auto}
+.store-search input{width:100%;padding:11px 14px;border:1px solid #ddd;border-radius:4px;margin-bottom:18px;font-size:14px}
+.store-item{border:1px solid #eee;border-radius:6px;padding:14px;margin-bottom:12px}
+.store-item:hover{box-shadow:0 3px 10px rgba(0,0,0,.1)}
+.store-name{font-weight:700;font-size:14.5px;margin-bottom:4px}
+.store-address{font-size:12.5px;color:#666;margin-bottom:6px}
+.store-phone{font-size:12.5px;color:#d32f2f;font-weight:700}
+.form-row{margin-bottom:14px}
+.form-row label{display:block;font-size:12.5px;font-weight:700;margin-bottom:5px}
+.form-row input{width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:4px;font-size:14px}
+.form-btn{width:100%;padding:12px;background:#d32f2f;color:#fff;border:none;border-radius:4px;font-weight:700;cursor:pointer;font-size:14px}
+.support-line{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #f0f0f0;font-size:14px}
+.support-line span:last-child{color:#d32f2f;font-weight:700}
+
+/* ---------- FOOTER ---------- */
+.footer{background:#000;color:#fff;padding:44px 30px 0;margin-top:40px}
+.footer-content{display:grid;grid-template-columns:repeat(6,1fr);gap:26px;max-width:1500px;margin:0 auto 34px}
+.footer-column h3{font-size:15.5px;font-weight:700;margin-bottom:14px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px;user-select:none}
+.footer-column h3:hover{color:#d32f2f}
+.footer-column h3 .icon{width:14px;height:14px;transition:transform .25s}
+.footer-column.collapsed h3 .icon{transform:rotate(-90deg)}
+.footer-column ul{list-style:none;overflow:hidden;max-height:600px;transition:max-height .3s ease}
+.footer-column.collapsed ul{max-height:0}
+.footer-column li{margin-bottom:9px}
+.footer-column a{color:#ddd;text-decoration:none;font-size:13px;cursor:pointer}
+.footer-column a:hover{color:#d32f2f}
+.footer-bottom{background:#1b1b1b;margin:0 -30px;padding:20px 30px}
+.footer-bottom-inner{max-width:1500px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap}
+.footer-copyright{font-size:13px;color:#ccc}
+.social-links{display:flex;gap:16px}
+.social-links a{width:42px;height:42px;border:1.6px solid #d32f2f;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#d32f2f;cursor:pointer;transition:.25s}
+.social-links a svg{width:19px;height:19px;fill:currentColor}
+.social-links a:hover{background:#d32f2f;color:#fff}
+
+.notification{position:fixed;top:90px;right:20px;background:#1f9d55;color:#fff;padding:13px 18px;border-radius:5px;z-index:3000;font-size:14px;box-shadow:0 6px 18px rgba(0,0,0,.25);animation:sl .3s}
+@keyframes sl{from{transform:translateX(400px);opacity:0}to{transform:translateX(0);opacity:1}}
+
+@media(max-width:1100px){.footer-content{grid-template-columns:repeat(3,1fr)}.cat-strip{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:760px){.header-top{flex-wrap:wrap}.search-container{order:3;max-width:100%;flex:1 0 100%}.header-right{gap:16px}.nav-main{display:none}.footer-content{grid-template-columns:repeat(2,1fr)}.cat-strip{grid-template-columns:repeat(2,1fr)}.hero h1{font-size:30px}}
+</style>
+</head>
+<body>
+
+<!-- ================= HEADER ================= -->
+<header>
+  <div class="header-top">
+    <button class="hamburger" onclick="openDrawer()" title="Menu">
+      <svg class="icon" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+
+    <div class="logo">
+      <svg viewBox="0 0 24 24"><path d="M12 2c1.5 4 5 5.5 5 10a5 5 0 0 1-10 0c0-1.6.5-2.8 1.2-3.8.3 1.2 1 2 1.9 2.3C9.6 7.8 10.6 4.6 12 2z" fill="#d32f2f"/></svg>
+      SUNFLAME
+    </div>
+
+    <div class="search-container">
+      <div class="search-bar">
+        <svg class="icon search-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg>
+        <input type="text" id="searchInput" placeholder="Search kitchen appliances..." autocomplete="off">
+        <div class="search-suggestions" id="searchSuggestions"></div>
+      </div>
+    </div>
+
+    <div class="header-right">
+      <button onclick="openModal('storeModal')">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M12 21s7-5.6 7-11a7 7 0 1 0-14 0c0 5.4 7 11 7 11z"/><circle cx="12" cy="10" r="2.6"/></svg>
+        <span>Locate Store</span>
+      </button>
+      <button onclick="openCart()">
+        <svg class="icon" viewBox="0 0 24 24"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2 3h3l2.6 12.4A2 2 0 0 0 9.6 17h8.6a2 2 0 0 0 2-1.6L22 7H6"/></svg>
+        <span>Cart</span>
+        <span class="cart-count" id="cartCount">0</span>
+      </button>
+      <button onclick="openModal('accountModal')">
+        <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.2 3.6-7 8-7s8 2.8 8 7"/></svg>
+        <span>Account</span>
+      </button>
+      <button onclick="openModal('supportModal')">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><path d="M4 14h2.5a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/><path d="M20 14h-2.5a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1H19a1 1 0 0 0 1-1z"/><path d="M20 19v1a2 2 0 0 1-2 2h-4"/></svg>
+        <span>Support</span>
+      </button>
+    </div>
+  </div>
+
+  <nav class="nav-main">
+    <ul class="nav-categories" id="navList"></ul>
+  </nav>
+</header>
+
+<!-- ================= SIDE DRAWER ================= -->
+<div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+<aside class="drawer" id="drawer">
+  <div class="drawer-head">
+    <strong>SUNFLAME</strong>
+    <button class="drawer-close" onclick="closeDrawer()">
+      <svg class="icon" viewBox="0 0 24 24"><line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/></svg>
+    </button>
+  </div>
+  <div class="drawer-body" id="drawerBody"></div>
+  <div class="drawer-foot">
+    <div><span>Service Support</span><span>080-60004411</span></div>
+    <div><span>Website Support</span><span>+919535621112</span></div>
+  </div>
+</aside>
+
+<!-- ================= HERO ================= -->
+<section class="hero">
+  <h1>COOKING DOESN'T HAVE TO WAIT</h1>
+  <p>Premium kitchen appliances engineered for the Indian kitchen</p>
+  <button class="hero-btn" onclick="document.getElementById('shopSection').scrollIntoView({behavior:'smooth'})">EXPLORE NOW!</button>
+</section>
+
+<div class="container">
+
+  <!-- CATEGORY STRIP -->
+  <div class="section">
+    <div class="cat-strip" id="catStrip"></div>
+  </div>
+
+  <!-- WATCH & SHOP -->
+  <div class="section">
+    <h2 class="section-title">Watch &amp; Shop</h2>
+    <div class="carousel-container">
+      <button class="carousel-nav prev" onclick="scrollCarousel(-1)">
+        <svg class="icon" viewBox="0 0 24 24"><polyline points="15,5 8,12 15,19"/></svg>
+      </button>
+      <div class="carousel-wrapper" id="carousel"></div>
+      <button class="carousel-nav next" onclick="scrollCarousel(1)">
+        <svg class="icon" viewBox="0 0 24 24"><polyline points="9,5 16,12 9,19"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- PRODUCTS -->
+  <div class="section" id="shopSection">
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab(0)">Bestsellers</button>
+      <button class="tab-btn" onclick="switchTab(1)">Most Viewed</button>
+    </div>
+    <div class="tab-content active" id="tab-0"><div class="products-grid" id="grid0"></div></div>
+    <div class="tab-content" id="tab-1"><div class="products-grid" id="grid1"></div></div>
+  </div>
+</div>
+
+
+<!-- ================= VIDEO MODAL ================= -->
+<div class="modal" id="videoModal">
+  <div class="modal-content" style="max-width:900px;background:#000;position:relative">
+    <video id="videoPlayer" width="100%" height="100%" controls style="display:block">
+      Your browser doesn't support HTML5 video.
+    </video>
+    <button class="close-modal" onclick="closeModal('videoModal')" style="position:absolute;top:10px;right:10px;background:#fff;z-index:999;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center"><svg class="icon" viewBox="0 0 24 24" style="stroke:currentColor;stroke-width:2;width:20px;height:20px"><line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/></svg></button>
+  </div>
+</div>
+
+<div class="modal" id="storeModal">
+  <div class="modal-content">
+    <div class="modal-header"><h2>Find a Sunflame Store</h2>
+      <button class="close-modal" onclick="closeModal('storeModal')"><svg class="icon" viewBox="0 0 24 24"><line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="store-search"><input type="text" id="storeSearch" placeholder="Search by city, locality or pincode" oninput="renderStores()"></div>
+      <div id="storeList"></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="accountModal">
+  <div class="modal-content" style="max-width:420px">
+    <div class="modal-header"><h2>Login / Register</h2>
+      <button class="close-modal" onclick="closeModal('accountModal')"><svg class="icon" viewBox="0 0 24 24"><line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row"><label>Mobile Number</label><input type="tel" placeholder="+91 00000 00000"></div>
+      <div class="form-row"><label>Email (optional)</label><input type="email" placeholder="you@example.com"></div>
+      <button class="form-btn" onclick="notify('OTP sent — placeholder flow')">Send OTP</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="supportModal">
+  <div class="modal-content" style="max-width:460px">
+    <div class="modal-header"><h2>Help &amp; Support</h2>
+      <button class="close-modal" onclick="closeModal('supportModal')"><svg class="icon" viewBox="0 0 24 24"><line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="support-line"><span>Service Support</span><span>080-60004411</span></div>
+      <div class="support-line"><span>Website Support</span><span>+91 95356 21112</span></div>
+      <div class="support-line"><span>Email</span><span>care@sunflame.com</span></div>
+      <div class="support-line"><span>Hours</span><span>Mon–Sat, 9am–7pm</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= FOOTER ================= -->
+<footer class="footer">
+  <div class="footer-content" id="footerContent"></div>
+  <div class="footer-bottom">
+    <div class="footer-bottom-inner">
+      <div class="footer-copyright">Copyright © 2024 Sunflame Ltd. All Rights Reserved.</div>
+      <div class="social-links">
+        <a title="Facebook" onclick="openPlaceholder('Facebook')"><svg viewBox="0 0 24 24"><path d="M15.1 8.4h2.3V5.3c-.4-.05-1.8-.18-3.4-.18-3.4 0-5.1 2-5.1 5.1v2.3H6.3v3.5h2.6V24h3.6v-8h2.6l.4-3.5h-3v-2c0-1.3.4-2.1 1.6-2.1z"/></svg></a>
+        <a title="Instagram" onclick="openPlaceholder('Instagram')"><svg viewBox="0 0 24 24"><path d="M12 2.2c3.2 0 3.6 0 4.9.07 1.2.05 1.8.25 2.2.42.6.22 1 .48 1.4.9.43.42.7.83.9 1.4.17.42.37 1.05.42 2.24.06 1.28.07 1.66.07 4.88s0 3.6-.07 4.88c-.05 1.19-.25 1.82-.42 2.24-.22.57-.48.98-.9 1.4-.42.42-.83.68-1.4.9-.42.17-1.05.37-2.24.42-1.28.06-1.66.07-4.88.07s-3.6 0-4.88-.07c-1.19-.05-1.82-.25-2.24-.42a3.9 3.9 0 0 1-1.4-.9 3.9 3.9 0 0 1-.9-1.4c-.17-.42-.37-1.05-.42-2.24C2.2 15.6 2.2 15.2 2.2 12s0-3.6.07-4.88c.05-1.19.25-1.82.42-2.24.22-.57.48-.98.9-1.4.42-.42.83-.68 1.4-.9.42-.17 1.05-.37 2.24-.42C8.4 2.2 8.8 2.2 12 2.2zm0 1.8c-3.15 0-3.5.01-4.74.07-1.14.05-1.76.24-2.17.4-.55.21-.94.47-1.35.88-.41.41-.67.8-.88 1.35-.16.41-.35 1.03-.4 2.17C2.4 8.5 2.4 8.85 2.4 12s0 3.5.06 4.74c.05 1.14.24 1.76.4 2.17.21.55.47.94.88 1.35.41.41.8.67 1.35.88.41.16 1.03.35 2.17.4 1.24.06 1.6.07 4.74.07s3.5-.01 4.74-.07c1.14-.05 1.76-.24 2.17-.4.55-.21.94-.47 1.35-.88.41-.41.67-.8.88-1.35.16-.41.35-1.03.4-2.17.06-1.24.07-1.6.07-4.74s-.01-3.5-.07-4.74c-.05-1.14-.24-1.76-.4-2.17a3.6 3.6 0 0 0-.88-1.35 3.6 3.6 0 0 0-1.35-.88c-.41-.16-1.03-.35-2.17-.4C15.5 4.01 15.15 4 12 4zm0 3.1a4.9 4.9 0 1 1 0 9.8 4.9 4.9 0 0 1 0-9.8zm0 8.08a3.18 3.18 0 1 0 0-6.36 3.18 3.18 0 0 0 0 6.36zM18.5 6.9a1.15 1.15 0 1 1-2.3 0 1.15 1.15 0 0 1 2.3 0z"/></svg></a>
+        <a title="YouTube" onclick="openPlaceholder('YouTube')"><svg viewBox="0 0 24 24"><path d="M22.5 7.2a2.8 2.8 0 0 0-1.95-2C18.8 4.7 12 4.7 12 4.7s-6.8 0-8.55.5a2.8 2.8 0 0 0-1.95 2A29.3 29.3 0 0 0 1 12a29.3 29.3 0 0 0 .5 4.8 2.8 2.8 0 0 0 1.95 2c1.75.5 8.55.5 8.55.5s6.8 0 8.55-.5a2.8 2.8 0 0 0 1.95-2A29.3 29.3 0 0 0 23 12a29.3 29.3 0 0 0-.5-4.8zM9.8 15.3V8.7l5.7 3.3-5.7 3.3z"/></svg></a>
+        <a title="LinkedIn" onclick="openPlaceholder('LinkedIn')"><svg viewBox="0 0 24 24"><path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zM3 9h4v12H3zM9.5 9h3.8v1.65h.05c.53-1 1.83-2.05 3.76-2.05 4.02 0 4.76 2.65 4.76 6.1V21h-4v-5.4c0-1.29-.02-2.95-1.8-2.95-1.8 0-2.08 1.4-2.08 2.85V21h-4z"/></svg></a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+/* =============== SVG PRODUCT ILLUSTRATIONS =============== */
+const ART = {
+cooker:`<svg viewBox="0 0 200 200"><ellipse cx="100" cy="178" rx="62" ry="8" fill="#00000018"/><rect x="92" y="30" width="16" height="14" rx="3" fill="#4a4a4a"/><ellipse cx="100" cy="30" rx="9" ry="4" fill="#6b6b6b"/><ellipse cx="100" cy="52" rx="64" ry="13" fill="#cfd4d8"/><ellipse cx="100" cy="49" rx="64" ry="13" fill="#e8ecef"/><ellipse cx="100" cy="49" rx="48" ry="9" fill="#d3d9dd"/><path d="M40 56 q0 66 12 88 q10 14 48 14 q38 0 48-14 q12-22 12-88z" fill="#b9c0c6"/><path d="M46 58 q2 62 12 84 q8 12 42 12 q34 0 42-12 q10-22 12-84z" fill="#dde2e6"/><path d="M52 60 q3 58 11 78 q7 10 20 11 q-16-40-13-89z" fill="#f2f5f7"/><rect x="150" y="52" width="42" height="15" rx="7" fill="#2f2f33"/><rect x="8" y="52" width="42" height="15" rx="7" fill="#2f2f33"/><rect x="42" y="118" width="116" height="7" fill="#a8b0b6" opacity=".55"/></svg>`,
+frypan:`<svg viewBox="0 0 200 200"><ellipse cx="88" cy="168" rx="60" ry="7" fill="#00000015"/><rect x="132" y="86" width="66" height="15" rx="7" fill="#2b2b2f" transform="rotate(-14 132 86)"/><rect x="176" y="72" width="16" height="12" rx="5" fill="#4a4a4f" transform="rotate(-14 176 72)"/><path d="M20 96 q0 54 68 54 q68 0 68-54z" fill="#3a3a40"/><ellipse cx="88" cy="96" rx="68" ry="26" fill="#5a5a62"/><ellipse cx="88" cy="94" rx="61" ry="22" fill="#26262b"/><ellipse cx="88" cy="94" rx="52" ry="18" fill="#37373d"/><ellipse cx="70" cy="88" rx="20" ry="6" fill="#ffffff" opacity=".14"/></svg>`,
+gasstove:`<svg viewBox="0 0 200 200"><ellipse cx="100" cy="176" rx="80" ry="8" fill="#00000015"/><rect x="14" y="66" width="172" height="92" rx="10" fill="#111114"/><rect x="18" y="70" width="164" height="76" rx="8" fill="#1d1d22"/><rect x="18" y="70" width="164" height="26" rx="8" fill="#2b2b31" opacity=".6"/><g fill="none" stroke="#8b7f4a" stroke-width="5"><circle cx="62" cy="104" r="17"/><circle cx="138" cy="104" r="17"/></g><circle cx="62" cy="104" r="8" fill="#d4b64e"/><circle cx="138" cy="104" r="8" fill="#d4b64e"/><g stroke="#3c3c44" stroke-width="6" stroke-linecap="round"><path d="M38 86 L86 122"/><path d="M86 86 L38 122"/><path d="M114 86 L162 122"/><path d="M162 86 L114 122"/></g><circle cx="60" cy="146" r="9" fill="#4a4a52"/><circle cx="140" cy="146" r="9" fill="#4a4a52"/><rect x="88" y="140" width="26" height="9" rx="4" fill="#d32f2f"/></svg>`,
+kadai:`<svg viewBox="0 0 200 200"><ellipse cx="100" cy="172" rx="58" ry="7" fill="#00000015"/><circle cx="26" cy="82" r="15" fill="none" stroke="#2f2f34" stroke-width="9"/><circle cx="174" cy="82" r="15" fill="none" stroke="#2f2f34" stroke-width="9"/><path d="M38 78 q6 74 62 74 q56 0 62-74z" fill="#1f6f63"/><path d="M44 80 q6 66 56 66 q50 0 56-66z" fill="#2b9184"/><ellipse cx="100" cy="78" rx="62" ry="17" fill="#38a89a"/><ellipse cx="100" cy="78" rx="53" ry="13" fill="#186b60"/><ellipse cx="78" cy="72" rx="18" ry="5" fill="#fff" opacity=".22"/></svg>`,
+cookware:`<svg viewBox="0 0 200 200"><ellipse cx="100" cy="176" rx="72" ry="8" fill="#00000015"/><path d="M104 108 q0 56 34 56 q34 0 34-56z" fill="#b8bec4"/><ellipse cx="138" cy="108" rx="34" ry="10" fill="#dfe4e8"/><rect x="130" y="86" width="16" height="12" rx="4" fill="#2f2f34"/><ellipse cx="138" cy="90" rx="22" ry="6" fill="#cdd3d8"/><path d="M22 96 q0 68 42 68 q42 0 42-68z" fill="#9ba3aa"/><path d="M28 98 q0 62 36 62 q36 0 36-62z" fill="#cfd5da"/><ellipse cx="64" cy="96" rx="42" ry="12" fill="#e9edf0"/><rect x="56" y="70" width="16" height="14" rx="4" fill="#2f2f34"/><ellipse cx="64" cy="76" rx="26" ry="7" fill="#dde2e6"/><rect x="2" y="98" width="30" height="12" rx="6" fill="#2f2f34"/><rect x="96" y="98" width="30" height="12" rx="6" fill="#2f2f34"/></svg>`,
+induction:`<svg viewBox="0 0 200 200"><ellipse cx="100" cy="170" rx="76" ry="8" fill="#00000015"/><rect x="16" y="60" width="168" height="94" rx="12" fill="#0e0e11"/><rect x="20" y="64" width="160" height="80" rx="9" fill="#191920"/><circle cx="86" cy="98" r="40" fill="none" stroke="#d32f2f" stroke-width="2.5" opacity=".7"/><circle cx="86" cy="98" r="30" fill="none" stroke="#d32f2f" stroke-width="2" opacity=".45"/><circle cx="86" cy="98" r="20" fill="none" stroke="#d32f2f" stroke-width="1.6" opacity=".3"/><rect x="140" y="74" width="34" height="20" rx="4" fill="#000"/><text x="157" y="89" font-size="13" fill="#ff4d4d" text-anchor="middle" font-family="monospace">888</text><g fill="#3a3a44"><circle cx="147" cy="112" r="6"/><circle cx="167" cy="112" r="6"/><circle cx="147" cy="130" r="6"/><circle cx="167" cy="130" r="6"/></g><rect x="20" y="64" width="160" height="24" rx="9" fill="#ffffff" opacity=".05"/></svg>`,
+mixer:`<svg viewBox="0 0 200 200"><ellipse cx="100" cy="176" rx="60" ry="8" fill="#00000015"/><path d="M62 46 h76 l-7 74 h-62z" fill="#c3cad0"/><path d="M68 50 h30 l-6 66 h-20z" fill="#e4e9ec" opacity=".8"/><rect x="58" y="36" width="84" height="14" rx="5" fill="#2f2f36"/><rect x="132" y="52" width="24" height="46" rx="6" fill="#2f2f36"/><rect x="46" y="120" width="108" height="46" rx="10" fill="#1d1d22"/><rect x="50" y="124" width="100" height="20" rx="6" fill="#2b2b33"/><g fill="#d32f2f"><circle cx="70" cy="155" r="7"/><circle cx="100" cy="155" r="7"/><circle cx="130" cy="155" r="7"/></g><rect x="72" y="112" width="56" height="9" rx="3" fill="#8f979e"/></svg>`,
+airfryer:`<svg viewBox="0 0 200 200"><ellipse cx="100" cy="178" rx="58" ry="7" fill="#00000015"/><rect x="42" y="26" width="116" height="146" rx="20" fill="#16161a"/><rect x="48" y="32" width="104" height="60" rx="14" fill="#232329"/><rect x="62" y="44" width="76" height="30" rx="5" fill="#000"/><text x="100" y="66" font-size="17" fill="#4fd1ff" text-anchor="middle" font-family="monospace">888</text><g fill="#3d3d47"><circle cx="70" cy="84" r="4"/><circle cx="90" cy="84" r="4"/><circle cx="110" cy="84" r="4"/><circle cx="130" cy="84" r="4"/></g><rect x="48" y="100" width="104" height="66" rx="14" fill="#2a2a31"/><rect x="56" y="112" width="88" height="46" rx="8" fill="#151519"/><g fill="#e8b93c"><rect x="66" y="128" width="30" height="7" rx="3" transform="rotate(-12 66 128)"/><rect x="82" y="140" width="34" height="7" rx="3" transform="rotate(8 82 140)"/><rect x="98" y="126" width="30" height="7" rx="3" transform="rotate(-5 98 126)"/></g><rect x="82" y="164" width="36" height="8" rx="4" fill="#4a4a55"/></svg>`,
+kettle:`<svg viewBox="0 0 200 200"><ellipse cx="100" cy="174" rx="54" ry="7" fill="#00000015"/><rect x="46" y="150" width="108" height="18" rx="8" fill="#23232a"/><path d="M56 56 q-4 90 12 96 h64 q16-6 12-96z" fill="#c9d0d6"/><path d="M62 58 q-3 84 10 90 h20 q-13-40-10-90z" fill="#eef2f5"/><ellipse cx="100" cy="56" rx="44" ry="12" fill="#e2e7eb"/><ellipse cx="100" cy="54" rx="44" ry="12" fill="#f2f6f8"/><rect x="90" y="36" width="20" height="14" rx="5" fill="#2f2f36"/><path d="M144 66 q26 10 26 34 q0 24-26 32" fill="none" stroke="#2f2f36" stroke-width="11" stroke-linecap="round"/><path d="M56 70 l-16 -14 q-6 -5 -2 -10" fill="none" stroke="#c9d0d6" stroke-width="10" stroke-linecap="round"/><rect x="82" y="120" width="12" height="34" rx="5" fill="#8f979e" opacity=".5"/></svg>`,
+microwave:`<svg viewBox="0 0 200 200"><ellipse cx="100" cy="164" rx="80" ry="7" fill="#00000015"/><rect x="14" y="48" width="172" height="106" rx="10" fill="#1a1a1f"/><rect x="20" y="54" width="112" height="94" rx="6" fill="#2a2a31"/><rect x="26" y="60" width="100" height="82" rx="4" fill="#0d0d10"/><rect x="30" y="64" width="92" height="74" rx="3" fill="#15151a"/><g stroke="#2e2e36" stroke-width="1"><path d="M40 64 v74"/><path d="M56 64 v74"/><path d="M72 64 v74"/><path d="M88 64 v74"/><path d="M104 64 v74"/></g><ellipse cx="76" cy="128" rx="30" ry="7" fill="#3a3a44"/><rect x="138" y="54" width="44" height="94" rx="6" fill="#26262d"/><rect x="143" y="60" width="34" height="22" rx="3" fill="#000"/><text x="160" y="76" font-size="12" fill="#3ddc84" text-anchor="middle" font-family="monospace">30:00</text><g fill="#3d3d47"><circle cx="151" cy="94" r="5"/><circle cx="169" cy="94" r="5"/><circle cx="151" cy="110" r="5"/><circle cx="169" cy="110" r="5"/></g><rect x="145" y="126" width="30" height="14" rx="6" fill="#d32f2f"/></svg>`,
+chimney:`<svg viewBox="0 0 200 200"><ellipse cx="100" cy="180" rx="70" ry="7" fill="#00000012"/><rect x="84" y="14" width="32" height="46" fill="#2a2a31"/><rect x="88" y="14" width="10" height="46" fill="#3d3d47"/><path d="M22 60 h156 l-22 56 h-112z" fill="#1d1d23"/><path d="M32 64 h48 l-16 48 h-48z" fill="#33333c" opacity=".7"/><rect x="42" y="116" width="116" height="16" rx="4" fill="#0f0f13"/><rect x="52" y="132" width="96" height="10" rx="4" fill="#26262e"/><g fill="#d32f2f"><circle cx="72" cy="124" r="4"/><circle cx="90" cy="124" r="4"/><circle cx="108" cy="124" r="4"/><circle cx="126" cy="124" r="4"/></g><rect x="22" y="60" width="156" height="8" fill="#3d3d47" opacity=".5"/></svg>`,
+ricecooker:`<svg viewBox="0 0 200 200"><ellipse cx="100" cy="174" rx="60" ry="7" fill="#00000015"/><path d="M40 84 q0 78 60 78 q60 0 60-78z" fill="#d8dde1"/><path d="M46 86 q0 70 54 70 q54 0 54-70z" fill="#eff3f5"/><ellipse cx="100" cy="82" rx="60" ry="16" fill="#c7ced4"/><ellipse cx="100" cy="78" rx="60" ry="16" fill="#e6ebee"/><rect x="88" y="60" width="24" height="14" rx="6" fill="#2f2f36"/><rect x="70" y="112" width="60" height="26" rx="6" fill="#23232a"/><rect x="76" y="118" width="34" height="12" rx="3" fill="#000"/><text x="93" y="128" font-size="9" fill="#3ddc84" text-anchor="middle" font-family="monospace">COOK</text><circle cx="120" cy="124" r="5" fill="#d32f2f"/><rect x="2" y="96" width="42" height="13" rx="6" fill="#2f2f36"/><rect x="156" y="96" width="42" height="13" rx="6" fill="#2f2f36"/></svg>`
+};
+
+/* =============== DATA =============== */
+const NAV = [
+ {label:"Pressure Cookers", groups:[{head:"Products",items:[{text:"Pressure Cookers",onclick:"jumpToProduct('cooker','Pressure Cooker')"},{text:"Outer Lid",onclick:"jumpToProduct('cooker','Pressure Cooker')"},{text:"Inner Lid",onclick:"jumpToProduct('cooker','Pressure Cooker')"},{text:"Svachh Series",onclick:"jumpToProduct('cooker','Pressure Cooker')"},{text:"5 Litres",onclick:"jumpToProduct('cooker','Pressure Cooker')"},{text:"3 Litres",onclick:"jumpToProduct('cooker','Pressure Cooker')"}]}]},
+ {label:"Cooking Appliances", groups:[{head:"Kitchen Essentials",items:[{text:"Gas Stoves",onclick:"jumpToProduct('gasstove','Gas Stove')"},{text:"Induction Cooktops",onclick:"jumpToProduct('induction','Induction')"},{text:"Microwave Ovens",onclick:"jumpToProduct('microwave','Microwave')"},{text:"Rice Cookers",onclick:"jumpToProduct('ricecooker','Rice Cooker')"},{text:"Electric Kettles",onclick:"jumpToProduct('kettle','Electric Kettle')"},{text:"Fry Pans",onclick:"jumpToProduct('frypan','Fry Pan')"}]}]},
+ {label:"Food Preparation", groups:[{head:"Kitchen Utensils",items:[{text:"Mixer Grinders",onclick:"jumpToProduct('mixer','Mixer Grinder')"},{text:"Kadai",onclick:"jumpToProduct('kadai','Kadai')"},{text:"Fry Pans",onclick:"jumpToProduct('frypan','Fry Pan')"},{text:"Cookware Sets",onclick:"notify('Coming soon')"},{text:"Non-Stick Pans",onclick:"notify('Coming soon')"},{text:"Stainless Steel",onclick:"notify('Coming soon')"}]}]},
+ {label:"Breakfast & Snacks", groups:[{head:"Quick Cooking",items:[{text:"Air Fryers",onclick:"jumpToProduct('airfryer','Air Fryer')"},{text:"Sandwich Makers",onclick:"notify('Coming soon')"},{text:"Toasters",onclick:"notify('Coming soon')"},{text:"Electric Grills",onclick:"notify('Coming soon')"},{text:"Waffle Makers",onclick:"notify('Coming soon')"},{text:"Popup Toasters",onclick:"notify('Coming soon')"}]}]},
+ {label:"Chimney/ Kitchen Hood", groups:[{head:"Kitchen Ventilation",items:[{text:"Chimneys",onclick:"jumpToProduct('chimney','Chimney')"},{text:"Auto Clean",onclick:"jumpToProduct('chimney','Chimney')"},{text:"Wall Mounted",onclick:"jumpToProduct('chimney','Chimney')"},{text:"Island Chimney",onclick:"jumpToProduct('chimney','Chimney')"},{text:"90 cm",onclick:"jumpToProduct('chimney','Chimney')"},{text:"60 cm",onclick:"jumpToProduct('chimney','Chimney')"}]}]},
+ {label:"Home Appliances", groups:[{head:"More Products",items:[{text:"Water Purifiers",onclick:"notify('Coming soon')"},{text:"Irons",onclick:"notify('Coming soon')"},{text:"Vacuum Cleaners",onclick:"notify('Coming soon')"},{text:"Fans",onclick:"notify('Coming soon')"},{text:"Air Coolers",onclick:"notify('Coming soon')"},{text:"Water Heaters",onclick:"notify('Coming soon')"}]}]},
+ {label:"Accessories", groups:[{head:"Add-ons",items:[{text:"Gaskets & Sealing",onclick:"notify('Coming soon')"},{text:"Safety Valves",onclick:"notify('Coming soon')"},{text:"Spare Handles",onclick:"notify('Coming soon')"},{text:"Lids & Covers",onclick:"notify('Coming soon')"},{text:"Cleaning Kits",onclick:"notify('Coming soon')"},{text:"Cooker Separators",onclick:"notify('Coming soon')"}]}]}
+];
+
+const CATS = [
+ {n:"Pressure Cooker",a:"cooker"},{n:"Gas Stove",a:"gasstove"},
+ {n:"Fry Pan",a:"frypan"},{n:"Kadai",a:"kadai"},
+ {n:"Induction",a:"induction"},{n:"Microwave",a:"microwave"},
+ {n:"Mixer Grinder",a:"mixer"},{n:"Air Fryer",a:"airfryer"},
+ {n:"Kettle",a:"kettle"},{n:"Chimney",a:"chimney"},
+ {n:"Rice Cooker",a:"ricecooker"}
+];
+
+const VIDEOS = [
+ {t:"SVACHH TRI PRESSURE COOKER",v:"12.2K",p:"₹1,600",a:"cooker",vid:"cooker.mp4"},
+ {t:"TRI-PLY SPLENDOR FRY PAN",v:"10.8K",p:"₹1,890",a:"frypan",vid:"frypan.mp4"},
+ {t:"ENDURA PRO 1000W MIXER",v:"15.3K",p:"₹9,795",a:"mixer",vid:"mixer.mp4"},
+ {t:"SVACHH NEO GAS STOVE",v:"8.5K",p:"₹7,355",a:"gasstove",vid:"gasstove.mp4"},
+ {t:"CRYSTA DIGITAL AIR FRYER",v:"4.8K",p:"₹6,295",a:"airfryer",vid:"airfryer.mp4"},
+ {t:"AUTO CLEAN CHIMNEY 90CM",v:"3.8K",p:"₹12,000",a:"chimney",vid:"chimney.mp4"}
+];
+
+
+const STORES = [
+ {n:"Sunflame Exclusive Store — Mumbai",a:"123 Marina Drive, Nariman Point, Mumbai 400001",p:"+91-22-1234-5678"},
+ {n:"Sunflame Kitchen Centre — Delhi",a:"456 Rajpath, Connaught Place, New Delhi 110001",p:"+91-11-9876-5432"},
+ {n:"Sunflame Store — Bengaluru",a:"789 MG Road, Bengaluru, Karnataka 560001",p:"+91-80-5555-1234"},
+ {n:"Sunflame Showroom — Hyderabad",a:"321 Hitech City, Hyderabad, Telangana 500081",p:"+91-40-4444-5678"},
+ {n:"Sunflame Experience Centre — Pune",a:"654 Viman Nagar, Pune, Maharashtra 411014",p:"+91-20-2222-1111"}
+];
+
+const FOOTER = [
+ {h:"Shopping",l:["Pressure Cookers","Gas Stoves","Fry Pans","Kadai","Induction Cooktops","Microwave Ovens","Mixer Grinders","Air Fryers","Electric Kettles","Chimney Hoods","Rice Cookers"]},
+ {h:"Company",l:["About Us","Investors","Blogs","People & Careers"]},
+ {h:"More Brands",l:["Shop Judge","MyKitchenDiaries","Corporate","UltraFresh"]},
+ {h:"Help & Support",l:["Website Orders","Customer Service","Register complaint","Product FAQs"]},
+ {h:"Locate Us",l:["Our Stores","Our Service Centers","Contact Us","Franchise Enquiry","Bulk Order Enquiry","Export Enquiry"]},
+ {h:"Policies",l:["Return Policy","Privacy Policy","Terms and conditions","Payment modes accepted"]}
+];
+
+const SUGGESTIONS = ["Pressure Cooker","Cooking Appliances","Mixer Grinder","Gas Stove","Microwave Oven","Air Fryer","Electric Kettle","Chimney Hood","Induction Cooktop","Fry Pan","Kadai","Rice Cooker"];
+
+const CHEV_DOWN = '<svg class="icon" viewBox="0 0 24 24"><polyline points="6,9 12,15 18,9"/></svg>';
+const CHEV_RIGHT = '<svg class="icon" viewBox="0 0 24 24"><polyline points="9,6 15,12 9,18"/></svg>';
+
+let cart = [];
+
+/* =============== PHOTO LOADER ===============
+   Drop real product photos into an "images" folder sitting next to this
+   HTML file, named exactly as the keys below (e.g. images/cooker.jpg).
+   If a photo is missing, the drawn illustration is shown instead.       */
+const PHOTO_EXT = 'jpg';
+function media(key){
+  const id = 'ph'+Math.random().toString(36).slice(2,9);
+  return `<span id="${id}" style="display:block;width:100%;height:100%">
+    <img src="images/${key}.${PHOTO_EXT}" alt="${key}"
+         style="width:100%;height:100%;object-fit:contain"
+         onerror="document.getElementById('${id}').innerHTML=ART['${key}']">
+  </span>`;
+}
+
+/* =============== RENDER =============== */
+function buildNav(){
+  document.getElementById('navList').innerHTML = NAV.map(c=>`
+    <li class="nav-item">
+      <button>${c.label} ${CHEV_DOWN}</button>
+      <div class="dropdown-menu">
+        ${c.groups.map(g=>`<div class="dd-head">${g.head}</div>${g.items.map(i=>{
+          const isObj = typeof i === 'object';
+          const text = isObj ? i.text : i;
+          const handler = isObj ? i.onclick : `notify('${i}')`;
+          return `<a onclick="${handler}">${text}</a>`;
+        }).join('')}`).join('')}
+      </div>
+    </li>`).join('');
+}
+
+function buildDrawer(){
+  document.getElementById('drawerBody').innerHTML = NAV.map((c,i)=>`
+    <div class="drawer-row" id="dr${i}">
+      <button onclick="toggleDrawerRow(${i})">${c.label} ${CHEV_RIGHT}</button>
+      <div class="drawer-sub">
+        ${c.groups.flatMap(g=>g.items).map(i=>{const isObj = typeof i === 'object'; const text = isObj ? i.text : i; const handler = isObj ? i.onclick : `notify('${i}')`; return `<a onclick="${handler}">${text}</a>`;}).join('')}
+      </div>
+    </div>`).join('') + `
+    <div class="drawer-row"><button onclick="closeDrawer();openModal('accountModal')">Store Login ${CHEV_RIGHT}</button></div>
+    <div class="drawer-row"><button onclick="closeDrawer();openModal('storeModal')">Locate Us ${CHEV_RIGHT}</button></div>
+    <div class="drawer-row"><button onclick="closeDrawer();openModal('supportModal')">Help &amp; Support ${CHEV_RIGHT}</button></div>
+    <div class="drawer-row"><button onclick="openPlaceholder('Franchise Enquiry')">Franchise Enquiry ${CHEV_RIGHT}</button></div>`;
+}
+
+function buildCats(){
+  document.getElementById('catStrip').innerHTML = CATS.map(c=>`
+    <div class="cat-tile" onclick="notify('${c.n}')">
+      <div class="cat-img">${media(c.a)}</div><span>${c.n}</span>
+    </div>`).join('');
+}
+
+function buildCarousel(){
+  document.getElementById('carousel').innerHTML = VIDEOS.map((v,i)=>`
+    <div class="carousel-item" onclick="playVideo('${v.vid}','${v.t}')">
+      <div class="video-card">
+        <div class="vbg">${media(v.a)}</div>
+        <div class="play-button"><svg viewBox="0 0 24 24" fill="currentColor"><polygon points="6,4 20,12 6,20"/></svg></div>
+        <div class="video-info">
+          <div class="video-title">${v.t}</div>
+          <div class="video-views">${v.v} Views</div>
+          <div class="video-price">Sunflame · ${v.p}</div>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function esc(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* Guess the drawn-illustration key from the product name, so menu links still jump to it. */
+function artKey(name){
+  const n = name.toLowerCase();
+  const c = CATS.find(c => n.includes(c.n.toLowerCase())) || CATS.find(c => n.includes(c.a));
+  return c ? c.a : '';
+}
+
+/* Products come live from the database — whatever the admin adds/removes shows here. */
+async function loadProducts(){
+  let products = [];
+  try {
+    products = (await (await fetch('/api/products')).json()).products || [];
+  } catch(e) {}
+  const html = products.length ? products.map(p => {
+    const key = artKey(p.name);
+    const img = p.image_url
+      ? `<img src="${esc(p.image_url)}" alt="${esc(p.name)}" style="width:100%;height:100%;object-fit:contain">`
+      : (ART[key] || '');
+    return `
+      <div class="product-card" data-key="${key}">
+        <div class="product-image">${img}</div>
+        <div class="product-info">
+          <div class="product-name">${esc(p.name)}</div>
+          <div class="product-price">₹${Number(p.price).toLocaleString('en-IN',{minimumFractionDigits:2})}</div>
+          <button class="add-to-cart-btn" data-name="${esc(p.name)}" onclick="addToCart(this.dataset.name)">Add to Cart</button>
+        </div>
+      </div>`;
+  }).join('') : '<p style="color:#777">No products available right now.</p>';
+  document.getElementById('grid0').innerHTML = html;
+  document.getElementById('grid1').innerHTML = html;
+}
+
+function buildFooter(){
+  document.getElementById('footerContent').innerHTML = FOOTER.map((f,i)=>`
+    <div class="footer-column" id="fc${i}">
+      <h3 onclick="toggleFooter(${i})"><span>${f.h}</span> ${CHEV_DOWN}</h3>
+      <ul>${f.l.map(l=>`<li><a onclick="openPlaceholder('${l.replace(/'/g,"")}')">${l}</a></li>`).join('')}</ul>
+    </div>`).join('');
+}
+
+/* =============== INTERACTIONS =============== */
+function toggleFooter(i){ document.getElementById('fc'+i).classList.toggle('collapsed'); }
+function toggleDrawerRow(i){ document.getElementById('dr'+i).classList.toggle('open'); }
+function openDrawer(){ document.getElementById('drawer').classList.add('active'); document.getElementById('drawerOverlay').classList.add('active'); }
+function closeDrawer(){ document.getElementById('drawer').classList.remove('active'); document.getElementById('drawerOverlay').classList.remove('active'); }
+function openModal(id){ document.getElementById(id).classList.add('active'); if(id==='storeModal') renderStores(); }
+function closeModal(id){ document.getElementById(id).classList.remove('active'); }
+function switchTab(i){
+  document.querySelectorAll('.tab-content').forEach(e=>e.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(e=>e.classList.remove('active'));
+  document.getElementById('tab-'+i).classList.add('active');
+  document.querySelectorAll('.tab-btn')[i].classList.add('active');
+}
+function playVideo(filename, title){
+  const videoPlayer = document.getElementById('videoPlayer');
+  videoPlayer.src = `videos/${filename}`;
+  videoPlayer.onloadstart = () => notify(`Playing: ${title}`);
+  videoPlayer.onerror = () => notify(`Video not found. Add ${filename} to videos/ folder`);
+  openModal('videoModal');
+}
+function jumpToProduct(imageKey, name){
+  closeDrawer();
+  document.querySelectorAll('.product-card').forEach(p => p.style.opacity = '1');
+  const matching = Array.from(document.querySelectorAll('.product-card')).find(p => p.dataset.key === imageKey);
+  if(matching){
+    matching.scrollIntoView({behavior:'smooth', block:'center'});
+    matching.style.opacity = '0.5';
+    setTimeout(() => matching.style.opacity = '1', 500);
+    notify(`Showing: ${name}`);
+  } else {
+    notify(`${name} not in current view`);
+  }
+}
+function scrollCarousel(d){ document.getElementById('carousel').scrollBy({left:d*450,behavior:'smooth'}); }
+function addToCart(n){ cart.push(n); document.getElementById('cartCount').textContent=cart.length; notify(n+' added to cart'); }
+function openCart(){ notify(cart.length? cart.length+' item(s) in cart' : 'Your cart is empty'); }
+
+function renderStores(){
+  const q=(document.getElementById('storeSearch').value||'').toLowerCase();
+  const list=STORES.filter(s=>!q||s.n.toLowerCase().includes(q)||s.a.toLowerCase().includes(q));
+  document.getElementById('storeList').innerHTML = list.length? list.map(s=>`
+    <div class="store-item"><div class="store-name">${s.n}</div><div class="store-address">${s.a}</div><div class="store-phone">${s.p}</div></div>`).join('')
+    : '<p style="color:#777;font-size:14px">No stores found.</p>';
+}
+
+/* ---- Footer link → opens a NEW TAB with the placeholder note ---- */
+function openPlaceholder(title){
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${title} — Sunflame</title>
+  <style>body{font-family:Segoe UI,sans-serif;margin:0;display:flex;align-items:center;justify-content:center;height:100vh;background:#faf7f5}
+  .box{text-align:center;padding:50px 60px;background:#fff;border-radius:10px;box-shadow:0 10px 40px rgba(0,0,0,.1);border-top:5px solid #d32f2f}
+  h1{color:#d32f2f;font-size:26px;margin-bottom:10px}h2{font-size:17px;color:#444;font-weight:600;margin-bottom:18px}
+  p{color:#666;font-size:15px}</style></head>
+  <body><div class="box"><h1>SUNFLAME</h1><h2>${title}</h2>
+  <p>Will update after Sagar's inputs.</p></div></body></html>`;
+  const w = window.open('', '_blank');
+  if(w){ w.document.write(html); w.document.close(); }
+  else {
+    const blob = new Blob([html],{type:'text/html'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.target='_blank'; a.rel='noopener';
+    document.body.appendChild(a); a.click(); a.remove();
+  }
+  notify(title+" — will update after Sagar's inputs");
+}
+
+function notify(msg){
+  const n=document.createElement('div'); n.className='notification'; n.textContent=msg;
+  document.body.appendChild(n); setTimeout(()=>n.remove(),2600);
+}
+
+/* ---- search ---- */
+function setupSearch(){
+  const inp=document.getElementById('searchInput'), box=document.getElementById('searchSuggestions');
+  inp.addEventListener('input',()=>{
+    const q=inp.value.trim().toLowerCase();
+    if(!q){ box.classList.remove('active'); return; }
+    const f=SUGGESTIONS.filter(s=>s.toLowerCase().includes(q));
+    box.innerHTML=f.map(s=>`<div class="suggestion-item"><svg class="icon" style="width:15px;height:15px;color:#999" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg>${s}</div>`).join('');
+    box.classList.toggle('active', f.length>0);
+    [...box.children].forEach((el,i)=> el.onclick=()=>{ inp.value=f[i]; box.classList.remove('active'); notify('Searching: '+f[i]); });
+  });
+  document.addEventListener('click',e=>{ if(!e.target.closest('.search-container')) box.classList.remove('active'); });
+}
+
+document.querySelectorAll('.modal').forEach(m=>m.addEventListener('click',e=>{ if(e.target===m) m.classList.remove('active'); }));
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ document.querySelectorAll('.modal.active').forEach(m=>m.classList.remove('active')); closeDrawer(); }});
+
+buildNav(); buildDrawer(); buildCats(); buildCarousel(); loadProducts(); buildFooter(); setupSearch();
+</script>
+</body>
+</html>

@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sunflame Admin</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Tahoma,sans-serif;background:#f6f6f6;color:#222}
+header{background:#d32f2f;color:#fff;padding:16px 20px;display:flex;justify-content:space-between;align-items:center}
+header h1{font-size:20px}
+header button{background:#fff;color:#d32f2f;border:none;padding:8px 14px;border-radius:4px;font-weight:700;cursor:pointer}
+main{max-width:900px;margin:24px auto;padding:0 16px}
+.card{background:#fff;border-radius:8px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.08);margin-bottom:24px}
+.card h2{font-size:18px;margin-bottom:14px;color:#d32f2f}
+label{display:block;font-weight:700;font-size:14px;margin:12px 0 6px}
+input{width:100%;padding:12px;border:1px solid #ccc;border-radius:5px;font-size:16px}
+.btn{margin-top:18px;width:100%;padding:14px;background:#d32f2f;color:#fff;border:none;border-radius:5px;font-size:16px;font-weight:700;cursor:pointer}
+.btn:disabled{opacity:.6;cursor:wait}
+.msg{margin-top:12px;font-size:14px;font-weight:600}
+.msg.err{color:#c62828}.msg.ok{color:#2e7d32}
+.preview{margin-top:10px;max-height:160px;max-width:100%;display:none;border-radius:6px}
+.item{display:flex;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid #eee}
+.item:last-child{border-bottom:none}
+.item img,.item .noimg{width:64px;height:64px;object-fit:contain;border-radius:6px;background:#f2f2f2;flex-shrink:0}
+.item .noimg{display:flex;align-items:center;justify-content:center;font-size:11px;color:#999}
+.item .info{flex:1;min-width:0}
+.item .name{font-weight:600;font-size:15px}
+.item .price{color:#555;font-size:14px;margin-top:3px}
+.item button{background:#fff;color:#c62828;border:1.5px solid #c62828;padding:8px 14px;border-radius:5px;font-weight:700;cursor:pointer}
+.item button:hover{background:#c62828;color:#fff}
+#login{max-width:380px;margin:60px auto}
+.hidden{display:none}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Sunflame Admin</h1>
+  <button id="logoutBtn" class="hidden" onclick="logout()">Log out</button>
+</header>
+
+<!-- LOGIN -->
+<main id="loginView">
+  <div class="card" id="login">
+    <h2>Log in</h2>
+    <form onsubmit="login(event)">
+      <label>Username</label>
+      <input id="user" autocomplete="username" required>
+      <label>Password</label>
+      <input id="pass" type="password" autocomplete="current-password" required>
+      <button class="btn" type="submit">Log in</button>
+      <div class="msg err" id="loginMsg"></div>
+    </form>
+  </div>
+</main>
+
+<!-- DASHBOARD -->
+<main id="dashView" class="hidden">
+  <div class="card">
+    <h2>Add a product</h2>
+    <form id="addForm" onsubmit="addProduct(event)">
+      <label>Product name</label>
+      <input name="name" placeholder="e.g. Sunflame Silicone Spatula" required>
+      <label>Price (₹)</label>
+      <input name="price" type="number" min="1" step="0.01" placeholder="e.g. 499" required>
+      <label>Photo</label>
+      <input name="images" type="file" accept="image/jpeg,image/png,image/webp" required onchange="showPreview(this)">
+      <img id="preview" class="preview" alt="">
+      <button class="btn" id="addBtn" type="submit">Add to website</button>
+      <div class="msg" id="addMsg"></div>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Products on the website (<span id="count">0</span>)</h2>
+    <div id="list">Loading…</div>
+  </div>
+</main>
+
+<script>
+let auth = sessionStorage.getItem('sfAuth');
+
+function esc(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+async function api(path, opts = {}){
+  const res = await fetch(path, {...opts, headers: {...(opts.headers||{}), Authorization: 'Basic ' + auth}});
+  const body = await res.json().catch(() => ({}));
+  if(!res.ok) throw new Error(body.detail || 'Something went wrong');
+  return body;
+}
+
+async function login(e){
+  e.preventDefault();
+  auth = btoa(unescape(encodeURIComponent(user.value + ':' + pass.value)));
+  try {
+    await api('/api/admin/check');
+    sessionStorage.setItem('sfAuth', auth);
+    showDashboard();
+  } catch(err){
+    loginMsg.textContent = err.message;
+  }
+}
+
+function logout(){
+  sessionStorage.removeItem('sfAuth');
+  location.reload();
+}
+
+function showDashboard(){
+  loginView.classList.add('hidden');
+  dashView.classList.remove('hidden');
+  logoutBtn.classList.remove('hidden');
+  loadProducts();
+}
+
+function showPreview(input){
+  const f = input.files[0];
+  if(f){ preview.src = URL.createObjectURL(f); preview.style.display = 'block'; }
+  else preview.style.display = 'none';
+}
+
+async function loadProducts(){
+  const res = await fetch('/api/products');
+  const {products} = await res.json();
+  count.textContent = products.length;
+  list.innerHTML = products.length ? products.map(p => `
+    <div class="item">
+      ${p.image_url ? `<img src="${esc(p.image_url)}" alt="">` : '<div class="noimg">No photo</div>'}
+      <div class="info">
+        <div class="name">${esc(p.name)}</div>
+        <div class="price">₹${Number(p.price).toLocaleString('en-IN')}</div>
+      </div>
+      <button onclick="removeProduct(${Number(p.id)}, this)">Remove</button>
+    </div>`).join('') : '<p style="color:#777">No products yet. Add one above.</p>';
+}
+
+async function addProduct(e){
+  e.preventDefault();
+  const form = e.target;
+  const file = form.images.files[0];
+  if(file && file.size > 5*1024*1024){ setMsg('Photo is too big (max 5 MB).', true); return; }
+  addBtn.disabled = true; addBtn.textContent = 'Adding…';
+  try {
+    await api('/api/admin/products', {method:'POST', body:new FormData(form)});
+    setMsg('Added! It is now live on the website.', false);
+    form.reset(); preview.style.display = 'none';
+    loadProducts();
+  } catch(err){
+    setMsg(err.message, true);
+  } finally {
+    addBtn.disabled = false; addBtn.textContent = 'Add to website';
+  }
+}
+
+async function removeProduct(id, btn){
+  const name = btn.closest('.item').querySelector('.name').textContent;
+  if(!confirm(`Remove "${name}" from the website?`)) return;
+  btn.disabled = true;
+  try {
+    await api('/api/admin/products/' + id, {method:'DELETE'});
+    loadProducts();
+  } catch(err){
+    alert(err.message);
+    btn.disabled = false;
+  }
+}
+
+function setMsg(text, isErr){
+  addMsg.textContent = text;
+  addMsg.className = 'msg ' + (isErr ? 'err' : 'ok');
+}
+
+if(auth){
+  api('/api/admin/check').then(showDashboard).catch(() => sessionStorage.removeItem('sfAuth'));
+}
+</script>
+</body>
+</html>
