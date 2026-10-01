@@ -129,6 +129,11 @@ header{position:sticky;top:0;z-index:500;background:#fff;box-shadow:0 2px 6px rg
 .discount{color:#20a95c;font-weight:700}
 .add-to-cart-btn{width:100%;padding:10px;background:#d32f2f;color:#fff;border:none;border-radius:4px;font-size:13.5px;font-weight:700;cursor:pointer}
 .add-to-cart-btn:hover{background:#a81c1c}
+.card-btns{display:flex;gap:8px}
+.card-btns .add-to-cart-btn{flex:1;background:#fff;color:#d32f2f;border:1.5px solid #d32f2f}
+.card-btns .add-to-cart-btn:hover{background:#fdecec}
+.buy-now-btn{flex:1;padding:10px;background:#d32f2f;color:#fff;border:none;border-radius:4px;font-size:13.5px;font-weight:700;cursor:pointer}
+.buy-now-btn:hover{background:#a81c1c}
 
 /* ---------- MODALS ---------- */
 .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:2000;align-items:center;justify-content:center;padding:20px}
@@ -539,7 +544,10 @@ async function loadProducts(){
         <div class="product-info">
           <div class="product-name">${esc(p.name)}</div>
           <div class="product-price">₹${Number(p.price).toLocaleString('en-IN',{minimumFractionDigits:2})}</div>
-          <button class="add-to-cart-btn" onclick="addToCart(${Number(p.id)})">Add to Cart</button>
+          <div class="card-btns">
+            <button class="add-to-cart-btn" onclick="addToCart(${Number(p.id)})">Add to Cart</button>
+            <button class="buy-now-btn" onclick="buyNow(${Number(p.id)})">Buy Now</button>
+          </div>
         </div>
       </div>`;
   }).join('') : '<p style="color:#777">No products available right now.</p>';
@@ -611,6 +619,8 @@ function changeQty(id, d){
 }
 function removeFromCart(id){ cart = cart.filter(i => i.id !== id); saveCart(); renderCart(); }
 function openCart(){ renderCart(); openModal('cartModal'); }
+let checkoutItems = null, fromCart = true;
+function buyNow(id){ openModal('cartModal'); showCheckout([{id, qty: 1}]); }
 
 function renderCart(){
   document.getElementById('cartTitle').textContent = 'Your Cart';
@@ -632,9 +642,12 @@ function renderCart(){
     <button class="cart-btn" onclick="showCheckout()">Checkout</button>`;
 }
 
-async function showCheckout(){
-  const items = cart.map(i => ({product_id: i.id, quantity: i.qty}));
+async function showCheckout(only){
+  fromCart = !only;
+  checkoutItems = (only || cart).map(i => ({product_id: i.id, quantity: i.qty}));
+  const items = checkoutItems;
   const body = document.getElementById('cartBody');
+  if(only){ document.getElementById('cartTitle').textContent = 'Checkout'; body.innerHTML = '<p style="color:#777;text-align:center;padding:30px 0">Loading…</p>'; }
   let sum;
   try {
     const r = await fetch('/api/cart/validate', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({items})});
@@ -656,7 +669,7 @@ async function showCheckout(){
         <div class="grand"><span>Total</span><span>${inr(sum.total)}</span></div>
       </div>
       <button class="cart-btn" id="payBtn" type="submit">Pay ${inr(sum.total)}</button>
-      <button type="button" onclick="renderCart()" style="width:100%;margin-top:8px;padding:10px;background:none;border:none;color:#555;cursor:pointer">← Back to cart</button>
+      <button type="button" onclick="${fromCart ? 'renderCart()' : "closeModal('cartModal')"}" style="width:100%;margin-top:8px;padding:10px;background:none;border:none;color:#555;cursor:pointer">${fromCart ? '← Back to cart' : 'Cancel'}</button>
     </form>`;
 }
 
@@ -675,7 +688,7 @@ async function placeOrder(e){
   const btn = document.getElementById('payBtn');
   btn.disabled = true; btn.textContent = 'Please wait…';
   const data = Object.fromEntries(new FormData(e.target));
-  data.items = cart.map(i => ({product_id: i.id, quantity: i.qty}));
+  data.items = checkoutItems;
   try {
     await loadRazorpay();
     const r = await fetch('/api/orders/create', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data)});
@@ -694,7 +707,7 @@ async function placeOrder(e){
         const v = await fetch('/api/payments/verify', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(resp)});
         const res = await v.json();
         if(!v.ok){ notify(res.detail || 'Payment could not be verified'); return; }
-        cart = []; saveCart();
+        if(fromCart){ cart = []; saveCart(); }
         document.getElementById('cartTitle').textContent = 'Order placed';
         document.getElementById('cartBody').innerHTML = `<div style="text-align:center;padding:24px 0">
           <div style="font-size:40px">✅</div>
