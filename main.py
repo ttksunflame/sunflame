@@ -1,7 +1,6 @@
 from fastapi import FastAPI, HTTPException, Request, Form, File, UploadFile, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
-from fastapi.staticfiles import StaticFiles
 import base64
 from typing import Optional
 import secrets
@@ -62,8 +61,28 @@ async def admin_page():
     return FileResponse(os.path.join(HERE, "admin.html"))
 
 
-app.mount("/images", StaticFiles(directory=os.path.join(HERE, "images"), check_dir=False), name="images")
-app.mount("/videos", StaticFiles(directory=os.path.join(HERE, "videos"), check_dir=False), name="videos")
+MEDIA_TYPES = {".jpg", ".jpeg", ".png", ".webp", ".mp4", ".webm"}
+
+
+def media_file(folder: str, name: str):
+    # Files may sit in images/ or videos/, or loose next to main.py.
+    name = os.path.basename(name)
+    if os.path.splitext(name)[1].lower() not in MEDIA_TYPES:
+        raise HTTPException(404)
+    for path in (os.path.join(HERE, folder, name), os.path.join(HERE, name)):
+        if os.path.isfile(path):
+            return FileResponse(path)
+    raise HTTPException(404)
+
+
+@app.get("/images/{name}")
+async def images(name: str):
+    return media_file("images", name)
+
+
+@app.get("/videos/{name}")
+async def videos(name: str):
+    return media_file("videos", name)
 
 # CORS
 app.add_middleware(
