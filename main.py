@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Form, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from datetime import datetime
@@ -285,6 +285,40 @@ async def update_order_status(order_id: int, status: str):
     
     response = supabase.table("orders").update({"status": status}).eq("id", order_id).execute()
     return {"order": response.data[0]}
+
+@app.post("/api/admin/products")
+async def create_product(
+    name: str = Form(...),
+    price: float = Form(...),
+    stock: int = Form(...),
+    category_id: int = Form(...),
+    description: str = Form(""),
+    images: list[UploadFile] = File(default=[]),
+):
+    """Create a product and upload its images to Supabase Storage"""
+    product = supabase.table("products").insert({
+        "name": name,
+        "description": description,
+        "price": price,
+        "stock": stock,
+        "category_id": category_id,
+        "is_active": True,
+    }).execute().data[0]
+
+    image_urls = []
+    for i, img in enumerate(images):
+        ext = (img.filename or "img.jpg").rsplit(".", 1)[-1].lower()
+        path = f"{product['id']}/{i}.{ext}"
+        supabase.storage.from_("product-images").upload(
+            path, await img.read(), {"content-type": img.content_type or "image/jpeg"}
+        )
+        url = supabase.storage.from_("product-images").get_public_url(path)
+        supabase.table("product_images").insert(
+            {"product_id": product["id"], "image_url": url, "sort_order": i}
+        ).execute()
+        image_urls.append(url)
+
+    return {"product": product, "images": image_urls}
 
 if __name__ == "__main__":
     import uvicorn
