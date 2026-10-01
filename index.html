@@ -423,14 +423,15 @@ let cart = [];
    Drop real product photos into an "images" folder sitting next to this
    HTML file, named exactly as the keys below (e.g. images/cooker.jpg).
    If a photo is missing, the drawn illustration is shown instead.       */
-const PHOTO_EXT = 'jpg';
+const PHOTO_EXTS = ['jpg','png','jpeg','webp'];
 function media(key){
-  const id = 'ph'+Math.random().toString(36).slice(2,9);
-  return `<span id="${id}" style="display:block;width:100%;height:100%">
-    <img src="images/${key}.${PHOTO_EXT}" alt="${key}"
-         style="width:100%;height:100%;object-fit:contain"
-         onerror="document.getElementById('${id}').innerHTML=ART['${key}']">
-  </span>`;
+  return `<img src="images/${key}.${PHOTO_EXTS[0]}" alt="${key}" data-key="${key}" data-try="0"
+       style="width:100%;height:100%;object-fit:contain" onerror="photoFail(this)">`;
+}
+function photoFail(img){
+  const i = +img.dataset.try + 1, key = img.dataset.key;
+  if(i < PHOTO_EXTS.length){ img.dataset.try = i; img.src = `images/${key}.${PHOTO_EXTS[i]}`; }
+  else { img.outerHTML = ART[key] || ''; }
 }
 
 /* =============== RENDER =============== */
@@ -501,10 +502,10 @@ async function loadProducts(){
     products = (await (await fetch('/api/products')).json()).products || [];
   } catch(e) {}
   const html = products.length ? products.map(p => {
-    const key = artKey(p.name);
+    const key = p.art_key || artKey(p.name);
     const img = p.image_url
       ? `<img src="${esc(p.image_url)}" alt="${esc(p.name)}" style="width:100%;height:100%;object-fit:contain">`
-      : (ART[key] || '');
+      : (key ? media(key) : '');
     return `
       <div class="product-card" data-key="${key}">
         <div class="product-image">${img}</div>

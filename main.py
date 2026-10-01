@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException, Request, Form, File, UploadFile, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 import base64
 from typing import Optional
 import secrets
@@ -59,6 +60,10 @@ async def website():
 @app.get("/admin")
 async def admin_page():
     return FileResponse(os.path.join(HERE, "admin.html"))
+
+
+app.mount("/images", StaticFiles(directory=os.path.join(HERE, "images"), check_dir=False), name="images")
+app.mount("/videos", StaticFiles(directory=os.path.join(HERE, "videos"), check_dir=False), name="videos")
 
 # CORS
 app.add_middleware(
