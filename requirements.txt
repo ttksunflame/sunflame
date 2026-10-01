@@ -4,3 +4,4 @@ python-dotenv
 supabase
 razorpay
 pydantic
+python-multipart
