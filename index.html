@@ -139,6 +139,20 @@ header{position:sticky;top:0;z-index:500;background:#fff;box-shadow:0 2px 6px rg
 .close-modal{background:none;border:none;cursor:pointer;color:#444;display:flex}
 .close-modal .icon{width:24px;height:24px}
 .modal-body{padding:20px;overflow-y:auto}
+.cart-item{display:flex;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid #eee}
+.cart-item img,.cart-item .ci-ph{width:56px;height:56px;object-fit:contain;background:#f4f4f4;border-radius:6px;flex-shrink:0}
+.cart-item .ci-info{flex:1;min-width:0}
+.cart-item .ci-name{font-size:14px;font-weight:600}
+.cart-item .ci-price{font-size:13px;color:#555;margin-top:2px}
+.qty{display:flex;align-items:center;gap:6px}
+.qty button{width:28px;height:28px;border:1px solid #ccc;background:#fff;border-radius:4px;font-size:16px;cursor:pointer}
+.ci-remove{background:none;border:none;color:#c62828;font-size:12px;font-weight:700;cursor:pointer;margin-top:4px;padding:0}
+.cart-total{display:flex;justify-content:space-between;font-weight:700;font-size:16px;padding:14px 0}
+.cart-btn{width:100%;padding:13px;background:#d32f2f;color:#fff;border:none;border-radius:5px;font-size:15px;font-weight:700;cursor:pointer}
+.cart-btn:disabled{opacity:.6;cursor:wait}
+.co-form input,.co-form textarea{width:100%;padding:10px;border:1px solid #ccc;border-radius:5px;font-size:14px;margin-bottom:10px;font-family:inherit}
+.co-sum{font-size:14px;margin:6px 0 12px}.co-sum div{display:flex;justify-content:space-between;padding:3px 0}
+.co-sum .grand{font-weight:700;font-size:16px;border-top:1px solid #eee;padding-top:8px;margin-top:4px}
 .store-search input{width:100%;padding:11px 14px;border:1px solid #ddd;border-radius:4px;margin-bottom:18px;font-size:14px}
 .store-item{border:1px solid #eee;border-radius:6px;padding:14px;margin-bottom:12px}
 .store-item:hover{box-shadow:0 3px 10px rgba(0,0,0,.1)}
@@ -293,6 +307,15 @@ header{position:sticky;top:0;z-index:500;background:#fff;box-shadow:0 2px 6px rg
   </div>
 </div>
 
+<div class="modal" id="cartModal">
+  <div class="modal-content" style="max-width:480px">
+    <div class="modal-header"><h2 id="cartTitle">Your Cart</h2>
+      <button class="close-modal" onclick="closeModal('cartModal')"><svg class="icon" viewBox="0 0 24 24"><line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/></svg></button>
+    </div>
+    <div class="modal-body" id="cartBody"></div>
+  </div>
+</div>
+
 <div class="modal" id="storeModal">
   <div class="modal-content">
     <div class="modal-header"><h2>Find a Sunflame Store</h2>
@@ -418,6 +441,8 @@ const CHEV_DOWN = '<svg class="icon" viewBox="0 0 24 24"><polyline points="6,9 1
 const CHEV_RIGHT = '<svg class="icon" viewBox="0 0 24 24"><polyline points="9,6 15,12 9,18"/></svg>';
 
 let cart = [];
+try { cart = JSON.parse(localStorage.getItem('sfCart')) || []; } catch(e) {}
+let PRODUCTS = {};
 
 /* =============== PHOTO LOADER ===============
    Drop real product photos into an "images" folder sitting next to this
@@ -501,6 +526,8 @@ async function loadProducts(){
   try {
     products = (await (await fetch('/api/products')).json()).products || [];
   } catch(e) {}
+  products.forEach(p => PRODUCTS[p.id] = p);
+  renderCartCount();
   const html = products.length ? products.map(p => {
     const key = p.art_key || artKey(p.name);
     const img = p.image_url
@@ -512,7 +539,7 @@ async function loadProducts(){
         <div class="product-info">
           <div class="product-name">${esc(p.name)}</div>
           <div class="product-price">₹${Number(p.price).toLocaleString('en-IN',{minimumFractionDigits:2})}</div>
-          <button class="add-to-cart-btn" data-name="${esc(p.name)}" onclick="addToCart(this.dataset.name)">Add to Cart</button>
+          <button class="add-to-cart-btn" onclick="addToCart(${Number(p.id)})">Add to Cart</button>
         </div>
       </div>`;
   }).join('') : '<p style="color:#777">No products available right now.</p>';
@@ -562,8 +589,125 @@ function jumpToProduct(imageKey, name){
   }
 }
 function scrollCarousel(d){ document.getElementById('carousel').scrollBy({left:d*450,behavior:'smooth'}); }
-function addToCart(n){ cart.push(n); document.getElementById('cartCount').textContent=cart.length; notify(n+' added to cart'); }
-function openCart(){ notify(cart.length? cart.length+' item(s) in cart' : 'Your cart is empty'); }
+/* =============== CART =============== */
+const inr = n => '₹' + Number(n).toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2});
+function saveCart(){ try { localStorage.setItem('sfCart', JSON.stringify(cart)); } catch(e) {} renderCartCount(); }
+function renderCartCount(){
+  cart = cart.filter(i => !Object.keys(PRODUCTS).length || PRODUCTS[i.id]);
+  document.getElementById('cartCount').textContent = cart.reduce((a, i) => a + i.qty, 0);
+}
+function addToCart(id){
+  const line = cart.find(i => i.id === id);
+  if(line) line.qty++; else cart.push({id, qty: 1});
+  saveCart();
+  notify(PRODUCTS[id].name + ' added to cart');
+}
+function changeQty(id, d){
+  const line = cart.find(i => i.id === id);
+  if(!line) return;
+  line.qty += d;
+  if(line.qty < 1) cart = cart.filter(i => i.id !== id);
+  saveCart(); renderCart();
+}
+function removeFromCart(id){ cart = cart.filter(i => i.id !== id); saveCart(); renderCart(); }
+function openCart(){ renderCart(); openModal('cartModal'); }
+
+function renderCart(){
+  document.getElementById('cartTitle').textContent = 'Your Cart';
+  const body = document.getElementById('cartBody');
+  if(!cart.length){ body.innerHTML = '<p style="color:#777;text-align:center;padding:30px 0">Your cart is empty.</p>'; return; }
+  let total = 0;
+  body.innerHTML = cart.map(i => {
+    const p = PRODUCTS[i.id]; total += p.price * i.qty;
+    return `<div class="cart-item">
+      ${p.image_url ? `<img src="${esc(p.image_url)}" alt="">` : '<div class="ci-ph"></div>'}
+      <div class="ci-info">
+        <div class="ci-name">${esc(p.name)}</div>
+        <div class="ci-price">${inr(p.price)}</div>
+        <button class="ci-remove" onclick="removeFromCart(${i.id})">Remove</button>
+      </div>
+      <div class="qty"><button onclick="changeQty(${i.id},-1)">−</button><span>${i.qty}</span><button onclick="changeQty(${i.id},1)">+</button></div>
+    </div>`;
+  }).join('') + `<div class="cart-total"><span>Subtotal</span><span>${inr(total)}</span></div>
+    <button class="cart-btn" onclick="showCheckout()">Checkout</button>`;
+}
+
+async function showCheckout(){
+  const items = cart.map(i => ({product_id: i.id, quantity: i.qty}));
+  const body = document.getElementById('cartBody');
+  let sum;
+  try {
+    const r = await fetch('/api/cart/validate', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({items})});
+    sum = await r.json();
+    if(!r.ok) throw new Error(sum.detail || 'Could not check your cart');
+  } catch(e){ notify(e.message); return; }
+  document.getElementById('cartTitle').textContent = 'Checkout';
+  body.innerHTML = `<form class="co-form" onsubmit="placeOrder(event)">
+      <input name="customer_name" placeholder="Full name" required>
+      <input name="customer_email" type="email" placeholder="Email" required>
+      <input name="customer_phone" type="tel" placeholder="Phone" pattern="[0-9+ ]{10,15}" required>
+      <textarea name="shipping_address" rows="2" placeholder="Address" required></textarea>
+      <input name="shipping_city" placeholder="City" required>
+      <input name="shipping_pincode" placeholder="Pincode" pattern="[0-9]{6}" required>
+      <div class="co-sum">
+        <div><span>Subtotal</span><span>${inr(sum.subtotal)}</span></div>
+        <div><span>GST</span><span>${inr(sum.gst)}</span></div>
+        <div><span>Shipping</span><span>Free</span></div>
+        <div class="grand"><span>Total</span><span>${inr(sum.total)}</span></div>
+      </div>
+      <button class="cart-btn" id="payBtn" type="submit">Pay ${inr(sum.total)}</button>
+      <button type="button" onclick="renderCart()" style="width:100%;margin-top:8px;padding:10px;background:none;border:none;color:#555;cursor:pointer">← Back to cart</button>
+    </form>`;
+}
+
+function loadRazorpay(){
+  if(window.Razorpay) return Promise.resolve();
+  return new Promise((ok, fail) => {
+    const sc = document.createElement('script');
+    sc.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    sc.onload = ok; sc.onerror = () => fail(new Error('Could not load the payment page'));
+    document.head.appendChild(sc);
+  });
+}
+
+async function placeOrder(e){
+  e.preventDefault();
+  const btn = document.getElementById('payBtn');
+  btn.disabled = true; btn.textContent = 'Please wait…';
+  const data = Object.fromEntries(new FormData(e.target));
+  data.items = cart.map(i => ({product_id: i.id, quantity: i.qty}));
+  try {
+    await loadRazorpay();
+    const r = await fetch('/api/orders/create', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data)});
+    const order = await r.json();
+    if(!r.ok) throw new Error(order.detail || 'Could not create the order');
+    new Razorpay({
+      key: order.key_id,
+      amount: order.amount_paise,
+      currency: 'INR',
+      name: 'Sunflame',
+      description: order.order_number,
+      order_id: order.razorpay_order_id,
+      prefill: {name: data.customer_name, email: data.customer_email, contact: data.customer_phone},
+      theme: {color: '#d32f2f'},
+      handler: async resp => {
+        const v = await fetch('/api/payments/verify', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(resp)});
+        const res = await v.json();
+        if(!v.ok){ notify(res.detail || 'Payment could not be verified'); return; }
+        cart = []; saveCart();
+        document.getElementById('cartTitle').textContent = 'Order placed';
+        document.getElementById('cartBody').innerHTML = `<div style="text-align:center;padding:24px 0">
+          <div style="font-size:40px">✅</div>
+          <p style="font-weight:700;margin:10px 0">Thank you! Your order is confirmed.</p>
+          <p style="color:#555">Order number: <b>${esc(res.order_number)}</b></p></div>`;
+      },
+      modal: {ondismiss: () => { btn.disabled = false; btn.textContent = 'Pay ' + inr(order.amount); }}
+    }).open();
+  } catch(err){
+    notify(err.message);
+    btn.disabled = false; btn.textContent = 'Try again';
+  }
+}
 
 function renderStores(){
   const q=(document.getElementById('storeSearch').value||'').toLowerCase();
