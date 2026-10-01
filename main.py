@@ -1,5 +1,9 @@
-from fastapi import FastAPI, HTTPException, Request, Form, File, UploadFile
+from fastapi import FastAPI, HTTPException, Request, Form, File, UploadFile, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+import base64
+from typing import Optional
+import secrets
 from pydantic import BaseModel
 from datetime import datetime
 import os
@@ -8,8 +12,10 @@ import json
 import hmac
 import hashlib
 from supabase import create_client, Client
+from postgrest.exceptions import APIError
 import razorpay
 import random
+import re
 import string
 
 load_dotenv()
@@ -23,7 +29,36 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 RAZORPAY_KEY_ID = os.getenv("RAZORPAY_KEY_ID")
 RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET")
 
+# Admin login
+ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "admin")
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+
 app = FastAPI()
+
+
+def require_admin(request: Request):
+    # No WWW-Authenticate header on the 401, so the browser never pops its own login box.
+    if not ADMIN_PASSWORD:
+        raise HTTPException(503, "ADMIN_PASSWORD is not set on the server")
+    auth = request.headers.get("Authorization", "")
+    try:
+        user, _, pw = base64.b64decode(auth.removeprefix("Basic ")).decode().partition(":")
+    except Exception:
+        raise HTTPException(401, "Wrong username or password")
+    if not (secrets.compare_digest(user, ADMIN_USERNAME) and secrets.compare_digest(pw, ADMIN_PASSWORD)):
+        raise HTTPException(401, "Wrong username or password")
+
+
+@app.get("/")
+async def website():
+    return FileResponse(os.path.join(HERE, "index.html"))
+
+
+@app.get("/admin")
+async def admin_page():
+    return FileResponse(os.path.join(HERE, "admin.html"))
 
 # CORS
 app.add_middleware(
@@ -67,8 +102,17 @@ async def get_products(category_id: int = None):
     if category_id:
         query = query.eq("category_id", category_id)
     
-    response = query.execute()
-    return {"products": response.data}
+    products = query.order("id", desc=True).execute().data
+    ids = [p["id"] for p in products]
+    first_image = {}
+    if ids:
+        images = supabase.table("product_images").select("product_id, image_url, sort_order") \
+            .in_("product_id", ids).order("sort_order").execute().data
+        for img in images:
+            first_image.setdefault(img["product_id"], img["image_url"])
+    for p in products:
+        p["image_url"] = first_image.get(p["id"])
+    return {"products": products}
 
 @app.get("/api/products/{product_id}")
 async def get_product(product_id: int):
@@ -264,7 +308,12 @@ async def get_order(order_id: int):
 
 # ===================== ADMIN =====================
 
-@app.get("/api/admin/orders")
+@app.get("/api/admin/check", dependencies=[Depends(require_admin)])
+async def admin_check():
+    return {"ok": True}
+
+
+@app.get("/api/admin/orders", dependencies=[Depends(require_admin)])
 async def get_all_orders(status: str = None):
     """Fetch all orders, optionally filtered by status"""
     query = supabase.table("orders").select("*").order("created_at", desc=True)
@@ -275,7 +324,7 @@ async def get_all_orders(status: str = None):
     response = query.execute()
     return {"orders": response.data}
 
-@app.patch("/api/admin/orders/{order_id}/status")
+@app.patch("/api/admin/orders/{order_id}/status", dependencies=[Depends(require_admin)])
 async def update_order_status(order_id: int, status: str):
     """Update order status"""
     valid_statuses = ["pending", "paid", "confirmed", "shipped", "delivered", "cancelled"]
@@ -286,39 +335,88 @@ async def update_order_status(order_id: int, status: str):
     response = supabase.table("orders").update({"status": status}).eq("id", order_id).execute()
     return {"order": response.data[0]}
 
-@app.post("/api/admin/products")
+ALLOWED_IMAGE_TYPES = {"image/jpeg": "jpg", "image/png": "png", "image/webp": "webp"}
+MAX_IMAGE_BYTES = 5 * 1024 * 1024
+
+
+def unique_slug(name: str) -> str:
+    base = re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-") or "product"
+    slug, n = base, 2
+    while supabase.table("products").select("id").eq("slug", slug).execute().data:
+        slug, n = f"{base}-{n}", n + 1
+    return slug
+
+
+@app.post("/api/admin/products", dependencies=[Depends(require_admin)])
 async def create_product(
     name: str = Form(...),
     price: float = Form(...),
-    stock: int = Form(...),
-    category_id: int = Form(...),
+    stock: int = Form(100),
+    category_id: Optional[int] = Form(None),
     description: str = Form(""),
     images: list[UploadFile] = File(default=[]),
 ):
     """Create a product and upload its images to Supabase Storage"""
-    product = supabase.table("products").insert({
-        "name": name,
-        "description": description,
-        "price": price,
-        "stock": stock,
-        "category_id": category_id,
-        "is_active": True,
-    }).execute().data[0]
+    if category_id is None:
+        cats = supabase.table("categories").select("id").order("sort_order").limit(1).execute().data
+        if not cats:
+            raise HTTPException(400, "No categories exist yet")
+        category_id = cats[0]["id"]
 
+    uploads = []
+    for img in images:
+        ext = ALLOWED_IMAGE_TYPES.get(img.content_type)
+        if ext is None:
+            raise HTTPException(400, f"{img.filename}: unsupported type {img.content_type}")
+        data = await img.read()
+        if len(data) > MAX_IMAGE_BYTES:
+            raise HTTPException(400, f"{img.filename} is larger than 5 MB")
+        uploads.append((ext, data, img.content_type))
+
+    try:
+        rows = supabase.table("products").insert({
+            "name": name,
+            "slug": unique_slug(name),
+            "description": description,
+            "price": price,
+            "stock": stock,
+            "category_id": category_id,
+            "is_active": True,
+        }).execute().data
+    except APIError as e:
+        raise HTTPException(400, f"Could not create product: {e.message}")
+    if not rows:
+        raise HTTPException(500, "Product insert returned no row")
+    product = rows[0]
+
+    # The product row is already committed, so clean it up rather than leave a
+    # half-made product that a retry would duplicate.
     image_urls = []
-    for i, img in enumerate(images):
-        ext = (img.filename or "img.jpg").rsplit(".", 1)[-1].lower()
-        path = f"{product['id']}/{i}.{ext}"
-        supabase.storage.from_("product-images").upload(
-            path, await img.read(), {"content-type": img.content_type or "image/jpeg"}
-        )
-        url = supabase.storage.from_("product-images").get_public_url(path)
-        supabase.table("product_images").insert(
-            {"product_id": product["id"], "image_url": url, "sort_order": i}
-        ).execute()
-        image_urls.append(url)
+    try:
+        for i, (ext, data, content_type) in enumerate(uploads):
+            path = f"{product['id']}/{i}.{ext}"
+            supabase.storage.from_("product-images").upload(
+                path, data, {"content-type": content_type}
+            )
+            url = supabase.storage.from_("product-images").get_public_url(path)
+            supabase.table("product_images").insert(
+                {"product_id": product["id"], "image_url": url, "sort_order": i}
+            ).execute()
+            image_urls.append(url)
+    except Exception as e:
+        supabase.table("products").delete().eq("id", product["id"]).execute()
+        raise HTTPException(400, f"Image upload failed, product not created: {e}")
 
     return {"product": product, "images": image_urls}
+
+
+@app.delete("/api/admin/products/{product_id}", dependencies=[Depends(require_admin)])
+async def remove_product(product_id: int):
+    # Hidden rather than deleted: past orders still reference the product.
+    rows = supabase.table("products").update({"is_active": False}).eq("id", product_id).execute().data
+    if not rows:
+        raise HTTPException(404, "Product not found")
+    return {"removed": product_id}
 
 if __name__ == "__main__":
     import uvicorn
