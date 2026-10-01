@@ -351,6 +351,7 @@ def unique_slug(name: str) -> str:
 async def create_product(
     name: str = Form(...),
     price: float = Form(...),
+    mrp: float = Form(...),
     stock: int = Form(100),
     category_id: Optional[int] = Form(None),
     description: str = Form(""),
@@ -379,6 +380,7 @@ async def create_product(
             "slug": unique_slug(name),
             "description": description,
             "price": price,
+            "mrp": mrp,
             "stock": stock,
             "category_id": category_id,
             "is_active": True,
