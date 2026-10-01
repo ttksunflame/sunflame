@@ -111,7 +111,7 @@ async def get_products(category_id: int = None):
         for img in images:
             first_image.setdefault(img["product_id"], img["image_url"])
     for p in products:
-        p["image_url"] = first_image.get(p["id"])
+        p["image_url"] = first_image.get(p["id"]) or p.get("image_url")
     return {"products": products}
 
 @app.get("/api/products/{product_id}")
@@ -351,7 +351,7 @@ def unique_slug(name: str) -> str:
 async def create_product(
     name: str = Form(...),
     price: float = Form(...),
-    mrp: float = Form(...),
+    mrp: str = Form(""),
     stock: int = Form(100),
     category_id: Optional[int] = Form(None),
     description: str = Form(""),
@@ -380,7 +380,7 @@ async def create_product(
             "slug": unique_slug(name),
             "description": description,
             "price": price,
-            "mrp": mrp,
+            "mrp": float(mrp) if mrp.strip() else price,
             "stock": stock,
             "category_id": category_id,
             "is_active": True,
@@ -405,6 +405,8 @@ async def create_product(
                 {"product_id": product["id"], "image_url": url, "sort_order": i}
             ).execute()
             image_urls.append(url)
+        if image_urls:
+            supabase.table("products").update({"image_url": image_urls[0]}).eq("id", product["id"]).execute()
     except Exception as e:
         supabase.table("products").delete().eq("id", product["id"]).execute()
         raise HTTPException(400, f"Image upload failed, product not created: {e}")
